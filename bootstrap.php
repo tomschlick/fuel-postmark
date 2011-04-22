@@ -13,5 +13,5 @@
 Autoloader::add_core_namespace('Postmark');
 
 Autoloader::add_classes(array(
-	'Postmark\Email_Postmark' => __DIR__.'/classes/email/postmark.php'
+	'Postmark\\Email_Postmark' => __DIR__.'/classes/email/postmark.php'
 ));
