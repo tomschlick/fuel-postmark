@@ -30,11 +30,12 @@ class Email_Postmark extends \Email_Driver {
 		$return = $this->newline;
 		if($type == 'text')
 		{
-			$return .= $this->_prep_quoted_printable($this->_word_wrap($this->text_contents));
+			$return .= $this->_word_wrap($this->text_contents);
+			
 		}
 		else
 		{
-			$return .= $this->_prep_quoted_printable($this->_word_wrap($this->html_contents));
+			$return .= $this->_word_wrap($this->html_contents);
 		}
 		return $return;
 	}
@@ -65,17 +66,24 @@ class Email_Postmark extends \Email_Driver {
 		{
 			$data['Bcc'] = implode(', ', $this->bcc_recipients);
 		}
-
-		if (!empty($this->text_contents)) 
+		if (empty($this->html_contents)) 
 		{
 			$data['HtmlBody'] = $this->_prepare_message('text');
 		}
-
-		if (!empty($this->html_contents)) 
+		else
+		{
+			$data['HtmlBody'] = $this->html_contents;
+		}
+		
+		if (empty($this->text_contents)) 
 		{
 			$data['TextBody'] = $this->_prepare_message('html');
 		}
-
+		else
+		{
+			$data['TextBody'] = $this->text_contents;
+		}
+		
 		if(count($this->attachments) > 0) 
 		{
 			foreach($this->attachments as $attachment)
@@ -151,7 +159,7 @@ class Email_Postmark extends \Email_Driver {
 		$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 		
 		$output = json_decode($output);
-
+		
 		if (intval($httpCode / 100) != 2) 
 		{
 			$this->_debug_message("Postmark Error - Response: {$output->Message}", 'error');
