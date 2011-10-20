@@ -4,40 +4,19 @@
  * Postmark Email Delivery library for Fuel
  *
  * @package		Postmark
- * @version		1.0
+ * @version		1.1
  * @author		Tom Schlick (tom@tomschlick.com)
  * @link		http://github.com/tomschlick/fuel-postmark
  * 
  */
 
-namespace Postmark;
 
-class Email_Postmark extends \Email_Driver {
+class Email_Driver_Postmark extends \Email_Driver {
 
 	public function __construct($config) 
 	{
 		parent::__construct($config);
 		\Config::load('postmark');
-	}
-	
-	/**
-	 * Prepares the message contents to be sent via postmark.
-	 *
-	 * @return	string	The message.
-	 */
-	protected function _prepare_message($type = 'text')
-	{
-		$return = $this->newline;
-		if($type == 'text')
-		{
-			$return .= $this->_word_wrap($this->text_contents);
-			
-		}
-		else
-		{
-			$return .= $this->_word_wrap($this->html_contents);
-		}
-		return $return;
 	}
 
 	/**
@@ -49,42 +28,29 @@ class Email_Postmark extends \Email_Driver {
 	{
 		if (!function_exists('curl_init'))
 		{
-			$this->_debug_message('Could not load curl. Make sure curl is enabled for postmark to work.', 'error');
+			//$this->_debug_message('Could not load curl. Make sure curl is enabled for postmark to work.', 'error');
 			return false;
 		}
 		
 		$data['Subject'] = $this->subject;	
-		$data['From'] = $this->sender;
-		$data['To'] = implode(', ', $this->recipients);
+		$data['From'] = static::format_addresses(array($this->config['from']));
+		$data['To'] = static::format_addresses($this->to);
 
-		if (!empty($this->cc_recipients)) 
+		if (!empty($this->cc)) 
 		{
-			$data['Cc'] = implode(', ', $this->cc_recipients);
+			$data['Cc'] = static::format_addresses($this->cc);
 		}
 		
-		if (!empty($this->bcc_recipients)) 
+		if (!empty($this->bcc)) 
 		{
-			$data['Bcc'] = implode(', ', $this->bcc_recipients);
-		}
-		if (empty($this->html_contents)) 
-		{
-			$data['HtmlBody'] = $this->_prepare_message('text');
-		}
-		else
-		{
-			$data['HtmlBody'] = $this->html_contents;
+			$data['Bcc'] = static::format_addresses($this->bcc);
 		}
 		
-		if (empty($this->text_contents)) 
-		{
-			$data['TextBody'] = $this->_prepare_message('html');
-		}
-		else
-		{
-			$data['TextBody'] = $this->text_contents;
-		}
-		
-		if(count($this->attachments) > 0) 
+		$data['HtmlBody'] = $this->body;
+	
+		$data['TextBody'] = $this->alt_body;
+
+		if(count($this->attachments, COUNT_RECURSIVE) > 2) 
 		{
 			foreach($this->attachments as $attachment)
 			{
@@ -103,14 +69,14 @@ class Email_Postmark extends \Email_Driver {
 					$basename = basename($filename);
 					if ( ! file_exists($filename))
 					{
-						$this->_debug_message('Could not find the file '.$filename, 'warning');
+						//$this->_debug_message('Could not find the file '.$filename, 'warning');
 					}
 					else
 					{
 						$filesize = filesize($filename) + 1;
 						if ( ! $fp = fopen($filename, 'r'))
 						{
-							$this->_debug_message('Could not read the file '.$filename, 'warning');
+							//$this->_debug_message('Could not read the file '.$filename, 'warning');
 						}
 						else
 						{
@@ -141,7 +107,7 @@ class Email_Postmark extends \Email_Driver {
 			'Content-Type: application/json',
 			'X-Postmark-Server-Token: ' . \Config::get('postmark_api_key'),
 		);
-
+		
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL, 'http://api.postmarkapp.com/email');
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -162,7 +128,7 @@ class Email_Postmark extends \Email_Driver {
 		
 		if (intval($httpCode / 100) != 2) 
 		{
-			$this->_debug_message("Postmark Error - Response: {$output->Message}", 'error');
+			//$this->_debug_message("Postmark Error - Response: {$output->Message}", 'error');
 			return false;
 		}
 		
