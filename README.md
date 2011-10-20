@@ -17,10 +17,10 @@ and then use this command:
 You can use this exactly the same way as you would use the default email protocols, just set your postmark api key in /fuel/packages/postmark/config/postmark.php
 
 ```php
-Email::factory(array('protocol' => 'postmark'))
+Email::factory('default', array('driver' => 'postmark'))
 	->to('to@yoursite.com')
 	->from('from@yoursite.com')
 	->subject('testing123')
-	->message('Your message goes here.')
+	->html_body('Your message goes here.')
 	->send();
 ```
