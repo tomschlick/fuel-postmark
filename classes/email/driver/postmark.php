@@ -46,6 +46,11 @@ class Email_Driver_Postmark extends \Email_Driver {
 			$data['Bcc'] = static::format_addresses($this->bcc);
 		}
 		
+		if (!empty($this->reply_to))
+		{
+			$data['ReplyTo'] = static::format_addresses($this->reply_to);
+		}
+		
 		$data['HtmlBody'] = $this->body;
 	
 		$data['TextBody'] = $this->alt_body;
